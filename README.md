@@ -24,8 +24,8 @@ Beyond coding, CyberSquad thrives on collaboration, problem‑solving, and const
  
 <h2 align="left">📄 Documents</h2><br>
   <ul>
-    <li><a href="https://codingburgas-my.sharepoint.com/:p:/g/personal/majelev24_codingburgas_bg/IQAklE2WVYLbQobO6XlzKaFxATm45kl27JArdq2BnmigBpE?e=cUCQEs">Documentation</a></li>
-    <li><a href="https://codingburgas-my.sharepoint.com/:w:/g/personal/majelev24_codingburgas_bg/IQCDS_cvAMoYQrnpaow_EQ16AYWvL1zDK6-_oBBXeO5Uxe4?e=lbk0e5">Presentation</a></li>
+    <li><a href="https://codingburgas-my.sharepoint.com/:p:/g/personal/majelev24_codingburgas_bg/IQAklE2WVYLbQobO6XlzKaFxATm45kl27JArdq2BnmigBpE?e=cUCQEs">Presentation</a></li>
+    <li><a href="https://codingburgas-my.sharepoint.com/:w:/g/personal/majelev24_codingburgas_bg/IQCDS_cvAMoYQrnpaow_EQ16AYWvL1zDK6-_oBBXeO5Uxe4?e=lbk0e5">Documentation</a></li>
   </ul>  
  
 <h2 align="left">👨🏻💻 Team Members </h2>
