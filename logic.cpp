@@ -1,4 +1,3 @@
-
 #include "logic.h"
 #include "data.h"
 
@@ -544,7 +543,7 @@ GroupStats logic_classStats(DataStore& store, const std::string& classLabel)
 GroupStats logic_schoolStats(DataStore& store)
 {
     std::vector<Student*> all = data_getAllActive(store);
-    return logic_groupStats(all, "Всички ученици");
+    return logic_groupStats(all, "All Students");
 }
 
 std::string logic_gradeLabel(double average)
@@ -670,4 +669,43 @@ std::vector<Student*> logic_buildRanking(DataStore& store,
     logic_quickSort(students, SortField::BY_AVERAGE, SortOrder::DESCENDING);
 
     return students;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Authentication
+// ═══════════════════════════════════════════════════════════════
+
+/*
+ * logic_login
+ * Hashes the supplied password and compares it against the stored hash.
+ * Returns a pointer to the matching User, or nullptr if credentials are wrong.
+ */
+const User* logic_login(const UserStore& users,
+    const std::string& username,
+    const std::string& password)
+{
+    if (username.empty() || password.empty())
+        return nullptr;
+
+    const User* user = data_findUser(users, username);
+    if (!user) return nullptr;
+
+    // Hash the supplied password and compare
+    std::string hash = data_hashPassword(password);
+    if (hash != user->passwordHash)
+        return nullptr;
+
+    return user;
+}
+
+bool logic_canEdit(const User* user)
+{
+    if (!user) return false;
+    return user->role == UserRole::ADMIN || user->role == UserRole::TEACHER;
+}
+
+bool logic_canDelete(const User* user)
+{
+    if (!user) return false;
+    return user->role == UserRole::ADMIN;
 }
