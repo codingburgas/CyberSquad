@@ -1,3 +1,4 @@
+
 #include "data.h"
 
 #include <algorithm>
@@ -536,4 +537,115 @@ bool data_isValidGrade(double value)
 int data_generateId(DataStore& store)
 {
     return store.nextId++;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  User / Authentication
+// ═══════════════════════════════════════════════════════════════
+
+std::string data_hashPassword(const std::string& password)
+{
+    // DJB2 hash – same algorithm as EGN hash, prefixed with "P"
+    unsigned long hash = 5381;
+    for (char c : password)
+        hash = ((hash << 5) + hash) + static_cast<unsigned char>(c);
+    std::ostringstream oss;
+    oss << "P" << std::hex << hash;
+    return oss.str();
+}
+
+std::string data_roleName(UserRole role)
+{
+    switch (role)
+    {
+    case UserRole::ADMIN:   return "Admin";
+    case UserRole::TEACHER: return "Teacher";
+    case UserRole::VIEWER:  return "Viewer";
+    default:                return "Unknown";
+    }
+}
+
+/*
+ * data_createUserStore
+ * Creates default accounts so the app works out of the box.
+ * Default credentials:
+ *   admin   / admin123   (Admin)
+ *   teacher / teach456   (Teacher)
+ *   viewer  / view789    (Viewer)
+ */
+UserStore data_createUserStore()
+{
+    UserStore store;
+
+    User admin;
+    admin.username = "admin";
+    admin.passwordHash = data_hashPassword("admin123");
+    admin.displayName = "Administrator";
+    admin.role = UserRole::ADMIN;
+    store.users.push_back(admin);
+
+    User teacher;
+    teacher.username = "teacher";
+    teacher.passwordHash = data_hashPassword("teach456");
+    teacher.displayName = "Teacher";
+    teacher.role = UserRole::TEACHER;
+    store.users.push_back(teacher);
+
+    User viewer;
+    viewer.username = "viewer";
+    viewer.passwordHash = data_hashPassword("view789");
+    viewer.displayName = "Viewer";
+    viewer.role = UserRole::VIEWER;
+    store.users.push_back(viewer);
+
+    return store;
+}
+
+const User* data_findUser(const UserStore& store, const std::string& username)
+{
+    for (const User& u : store.users)
+        if (u.username == username)
+            return &u;
+    return nullptr;
+}
+
+bool data_saveUsers(const UserStore& store, const std::string& filepath)
+{
+    std::ofstream file(filepath);
+    if (!file.is_open()) return false;
+
+    for (const User& u : store.users)
+    {
+        file << u.username << "|"
+            << u.passwordHash << "|"
+            << u.displayName << "|"
+            << static_cast<int>(u.role) << "\n";
+    }
+    file.close();
+    return true;
+}
+
+bool data_loadUsers(UserStore& store, const std::string& filepath)
+{
+    std::ifstream file(filepath);
+    if (!file.is_open()) return false;
+
+    store.users.clear();
+    std::string line;
+    while (std::getline(file, line))
+    {
+        line = str_trim(line);
+        if (line.empty()) continue;
+        auto parts = str_split(line, '|');
+        if (parts.size() < 4) continue;
+
+        User u;
+        u.username = parts[0];
+        u.passwordHash = parts[1];
+        u.displayName = parts[2];
+        u.role = static_cast<UserRole>(std::stoi(parts[3]));
+        store.users.push_back(u);
+    }
+    file.close();
+    return true;
 }
