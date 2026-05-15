@@ -147,18 +147,18 @@ static void seedData(AppState& app)
     };
 
     SeedStudent seeds[] = {
-        { "Aiden", "Cross",    "9A",  Grade::SECOND, Gender::MALE   },
-        { "Lena",     "Marovic",   "9A",  Grade::SECOND, Gender::FEMALE },
-        { "Kai",    "Ellington",  "9A",  Grade::SECOND, Gender::MALE   },
-        { "Mira",    "Solace ",    "9A",  Grade::SECOND, Gender::FEMALE },
-        { "Darius",   "Holt",   "9B",  Grade::SECOND, Gender::MALE   },
-        { "Elara",     "Voss",  "9B",  Grade::SECOND, Gender::FEMALE },
-        { "Grayson",    "Locke",     "9B",  Grade::SECOND, Gender::MALE   },
-        { "Sienna",  "Vale",  "9B",  Grade::SECOND, Gender::FEMALE },
-        { "Rafael",     "Cortez",  "10A", Grade::THIRD,  Gender::MALE   },
-        { "Talia",      "Rivers",  "10A", Grade::THIRD,  Gender::FEMALE },
-        { "Asher",  "Kincaid",   "10A", Grade::THIRD,  Gender::MALE   },
-        { "Landon",     "Pierce", "10B", Grade::THIRD,  Gender::MALE },
+        { "Alexander", "Petrov",    "9A",  Grade::SECOND, Gender::MALE   },
+        { "Maria",     "Ivanova",   "9A",  Grade::SECOND, Gender::FEMALE },
+        { "George",    "Stoyanov",  "9A",  Grade::SECOND, Gender::MALE   },
+        { "Simona",    "Dimova",    "9A",  Grade::SECOND, Gender::FEMALE },
+        { "Nikolay",   "Todorov",   "9B",  Grade::SECOND, Gender::MALE   },
+        { "Elena",     "Marinova",  "9B",  Grade::SECOND, Gender::FEMALE },
+        { "Stefan",    "Kolev",     "9B",  Grade::SECOND, Gender::MALE   },
+        { "Victoria",  "Nikolova",  "9B",  Grade::SECOND, Gender::FEMALE },
+        { "Boiko",     "Atanasov",  "10A", Grade::THIRD,  Gender::MALE   },
+        { "Anna",      "Hristova",  "10A", Grade::THIRD,  Gender::FEMALE },
+        { "Lachezar",  "Genchev",   "10A", Grade::THIRD,  Gender::MALE   },
+        { "Diana",     "Stefanova", "10B", Grade::THIRD,  Gender::FEMALE },
     };
 
     double gradeMatrix[][10] = {
@@ -212,7 +212,15 @@ void pres_init(AppState& app)
     memset(app.gradeNoteBuf, 0, sizeof(app.gradeNoteBuf));
     memset(app.filterClass, 0, sizeof(app.filterClass));
 
-    app.currentScreen = Screen::DASHBOARD;
+    // Login state
+    memset(app.loginUserBuf, 0, sizeof(app.loginUserBuf));
+    memset(app.loginPassBuf, 0, sizeof(app.loginPassBuf));
+    app.loggedInUser = nullptr;
+    app.loginError = "";
+    app.loginShowPass = false;
+    app.loginShakeTimer = 0.0f;
+
+    app.currentScreen = Screen::LOGIN;   // Always start at login
     app.activeModal = Modal::NONE;
     app.selectedStudentId = -1;
     app.tableScrollY = 0;
@@ -238,6 +246,10 @@ void pres_init(AppState& app)
     app.focusedInput = 0;
 
     app.store = data_createStore();
+
+    // Load or create user accounts
+    app.userStore = data_createUserStore();
+    data_loadUsers(app.userStore, USERS_FILE); // overwrite defaults if file exists
 
     LogicResult lr = logic_load(app.store, DATA_FILE);
     if (lr != LogicResult::OK || app.store.students.empty())
@@ -469,6 +481,244 @@ bool pres_cycleSelector(Rectangle rect, const std::string& label,
 }
 
 // ═══════════════════════════════════════════════════════════════
+//  Login Screen
+// ═══════════════════════════════════════════════════════════════
+
+void pres_drawLoginScreen(AppState& app)
+{
+    // Dark gradient background (drawn as two rectangles for compatibility)
+    Color bgTop = { 15,  23,  42,  255 };
+    Color bgBottom = { 30,  41,  59,  255 };
+    DrawRectangleGradientV(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, bgTop, bgBottom);
+
+    // Decorative soft glow circles (drawn as plain translucent circles)
+    DrawCircle(WINDOW_WIDTH - 200, 100, 280, Color{ 37,  99, 235, 18 });
+    DrawCircle(WINDOW_WIDTH - 200, 100, 180, Color{ 37,  99, 235, 12 });
+    DrawCircle(200, WINDOW_HEIGHT - 100, 240, Color{ 16, 185, 129, 15 });
+    DrawCircle(200, WINDOW_HEIGHT - 100, 140, Color{ 16, 185, 129, 10 });
+
+    // Card shake offset on bad login
+    float shakeX = 0.0f;
+    if (app.loginShakeTimer > 0.0f)
+    {
+        app.loginShakeTimer -= GetFrameTime();
+        shakeX = sinf(app.loginShakeTimer * 40.0f) * 6.0f;
+    }
+
+    // Login card
+    float cardW = 420.0f;
+    float cardH = 480.0f;
+    float cardX = (WINDOW_WIDTH - cardW) / 2.0f + shakeX;
+    float cardY = (WINDOW_HEIGHT - cardH) / 2.0f;
+
+    DrawRectangleRounded({ cardX, cardY, cardW, cardH }, 0.08f, 8,
+        { 255, 255, 255, 255 });
+    DrawRectangleRoundedLines({ cardX, cardY, cardW, cardH }, 0.08f, 8,
+        { 226, 232, 240, 255 });
+
+    // Top accent bar
+    DrawRectangleRounded({ cardX, cardY, cardW, 6 }, 0.08f, 6,
+        COL_PRIMARY);
+
+    float px = cardX + 40.0f;
+    float py = cardY + 36.0f;
+
+    // Logo / title
+    float logoW = MeasureText("GradeBook", 32);
+    DrawText("GradeBook",
+        (int)(cardX + (cardW - logoW) / 2.0f),
+        (int)py, 32, { 37, 99, 235, 255 });
+    py += 44;
+
+    float subW = MeasureText("Student Grade Management System", 13);
+    DrawText("Student Grade Management System",
+        (int)(cardX + (cardW - subW) / 2.0f),
+        (int)py, 13, { 100, 116, 139, 255 });
+    py += 44;
+
+    // Divider
+    DrawLine((int)px, (int)py, (int)(cardX + cardW - 40), (int)py,
+        { 226, 232, 240, 255 });
+    py += 20;
+
+    // Welcome text
+    DrawText("Welcome back", (int)px, (int)py, 20, { 15, 23, 42, 255 });
+    py += 28;
+    DrawText("Sign in to your account", (int)px, (int)py, 13,
+        { 100, 116, 139, 255 });
+    py += 36;
+
+    // Username field
+    DrawText("Username", (int)px, (int)py, 13, { 71, 85, 105, 255 });
+    py += 18;
+    Rectangle userRect = { px, py, cardW - 80, 42 };
+    bool userFocused = (app.focusedInput == 500);
+    DrawRectangleRounded(userRect, 0.2f, 6, { 248, 250, 252, 255 });
+    DrawRectangleRoundedLines(userRect, 0.2f, 6,
+        userFocused ? COL_PRIMARY : COL_BORDER);
+    if (pres_mouseOver(userRect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        app.focusedInput = 500;
+
+    if (app.loginUserBuf[0] == '\0')
+        DrawText("e.g. admin", (int)px + 12, (int)py + 13, 14,
+            { 148, 163, 184, 255 });
+    else
+        DrawText(app.loginUserBuf, (int)px + 12, (int)py + 13, 14,
+            { 15, 23, 42, 255 });
+
+    // Cursor blink in username
+    if (userFocused && ((int)(GetTime() * 2)) % 2 == 0)
+    {
+        int tw = MeasureText(app.loginUserBuf, 14);
+        DrawLine((int)px + 14 + tw, (int)py + 8,
+            (int)px + 14 + tw, (int)py + 34, COL_PRIMARY);
+    }
+    py += 52;
+
+    // Password field
+    DrawText("Password", (int)px, (int)py, 13, { 71, 85, 105, 255 });
+    py += 18;
+    Rectangle passRect = { px, py, cardW - 80, 42 };
+    bool passFocused = (app.focusedInput == 501);
+    DrawRectangleRounded(passRect, 0.2f, 6, { 248, 250, 252, 255 });
+    DrawRectangleRoundedLines(passRect, 0.2f, 6,
+        passFocused ? COL_PRIMARY : COL_BORDER);
+    if (pres_mouseOver(passRect) && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        app.focusedInput = 501;
+
+    // Show masked or plain password
+    if (app.loginPassBuf[0] == '\0')
+        DrawText("Password", (int)px + 12, (int)py + 13, 14,
+            { 148, 163, 184, 255 });
+    else
+    {
+        if (app.loginShowPass)
+            DrawText(app.loginPassBuf, (int)px + 12, (int)py + 13, 14,
+                { 15, 23, 42, 255 });
+        else
+        {
+            // Draw dots for each character
+            int len = (int)strlen(app.loginPassBuf);
+            std::string dots(len, '*');
+            DrawText(dots.c_str(), (int)px + 12, (int)py + 13, 14,
+                { 15, 23, 42, 255 });
+        }
+    }
+
+    // Cursor blink in password
+    if (passFocused && ((int)(GetTime() * 2)) % 2 == 0)
+    {
+        int len = (int)strlen(app.loginPassBuf);
+        std::string display = app.loginShowPass
+            ? std::string(app.loginPassBuf)
+            : std::string(len, '*');
+        int tw = MeasureText(display.c_str(), 14);
+        DrawLine((int)px + 14 + tw, (int)py + 8,
+            (int)px + 14 + tw, (int)py + 34, COL_PRIMARY);
+    }
+
+    // Show/hide password toggle button
+    Rectangle showRect = { cardX + cardW - 74, py + 8, 26, 26 };
+    bool showHover = pres_mouseOver(showRect);
+    DrawRectangleRounded(showRect, 0.3f, 4,
+        showHover ? COL_BG : BLANK);
+    DrawText(app.loginShowPass ? "***" : "abc",
+        (int)showRect.x + 3, (int)showRect.y + 6, 11,
+        { 100, 116, 139, 255 });
+    if (showHover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        app.loginShowPass = !app.loginShowPass;
+
+    py += 52;
+
+    // Error message
+    if (!app.loginError.empty())
+    {
+        DrawRectangleRounded({ px, py, cardW - 80, 34 }, 0.2f, 6,
+            { 254, 226, 226, 255 });
+        DrawRectangleRoundedLines({ px, py, cardW - 80, 34 }, 0.2f, 6,
+            { 252, 165, 165, 255 });
+        float ew = (float)MeasureText(app.loginError.c_str(), 12);
+        DrawText(app.loginError.c_str(),
+            (int)(px + (cardW - 80 - ew) / 2.0f),
+            (int)py + 11, 12, { 185, 28, 28, 255 });
+        py += 44;
+    }
+    else
+    {
+        py += 8;
+    }
+
+    // Sign in button
+    Rectangle btnRect = { px, py, cardW - 80, 44 };
+    bool btnHover = pres_mouseOver(btnRect);
+    DrawRectangleRounded(btnRect, 0.25f, 6,
+        btnHover ? pres_darker(COL_PRIMARY, 15) : COL_PRIMARY);
+    float bw = (float)MeasureText("Sign In", 16);
+    DrawText("Sign In",
+        (int)(px + (cardW - 80 - bw) / 2.0f),
+        (int)py + 14, 16, WHITE);
+    py += 54;
+
+    // Hint text showing default credentials
+    DrawText("Default:  admin / admin123", (int)px, (int)py, 11,
+        { 148, 163, 184, 255 });
+
+    // ── Handle keyboard input ────────────────────────────────
+    auto handleInput = [&](char* buf, int bufSize) {
+        int key = GetCharPressed();
+        while (key > 0)
+        {
+            int len = (int)strlen(buf);
+            if (key >= 32 && len < bufSize - 1)
+            {
+                buf[len] = static_cast<char>(key);
+                buf[len + 1] = '\0';
+            }
+            key = GetCharPressed();
+        }
+        if (IsKeyPressed(KEY_BACKSPACE))
+        {
+            int len = (int)strlen(buf);
+            if (len > 0) buf[len - 1] = '\0';
+        }
+        };
+
+    if (app.focusedInput == 500) handleInput(app.loginUserBuf, INPUT_BUF);
+    if (app.focusedInput == 501) handleInput(app.loginPassBuf, INPUT_BUF);
+
+    // Tab key switches between fields
+    if (IsKeyPressed(KEY_TAB))
+        app.focusedInput = (app.focusedInput == 500) ? 501 : 500;
+
+    // Attempt login on button click or Enter key
+    bool tryLogin = (btnHover && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+        || IsKeyPressed(KEY_ENTER);
+
+    if (tryLogin)
+    {
+        const User* user = logic_login(app.userStore,
+            std::string(app.loginUserBuf),
+            std::string(app.loginPassBuf));
+        if (user)
+        {
+            // Success - enter the app
+            app.loggedInUser = user;
+            app.loginError = "";
+            app.currentScreen = Screen::DASHBOARD;
+            app.focusedInput = 0;
+            memset(app.loginPassBuf, 0, sizeof(app.loginPassBuf));
+        }
+        else
+        {
+            // Bad credentials - show error and shake the card
+            app.loginError = "Invalid username or password.";
+            app.loginShakeTimer = 0.4f;
+            memset(app.loginPassBuf, 0, sizeof(app.loginPassBuf));
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  Top Bar
 // ═══════════════════════════════════════════════════════════════
 
@@ -489,8 +739,28 @@ void pres_drawTopBar(AppState& app)
     case Screen::SORT_DEMO: subtitle = "Sort Demo";  break;
     case Screen::STATS:     subtitle = "Statistics"; break;
     case Screen::ABOUT:     subtitle = "About";      break;
+    default:                subtitle = "";           break;
     }
     drawText(subtitle, SIDEBAR_WIDTH + 120.0f, 22, 14, COL_TEXT_MUTED, FONT_REGULAR);
+
+    // Logged-in user badge + logout button (right side, before Save)
+    if (app.loggedInUser)
+    {
+        std::string userInfo = app.loggedInUser->displayName
+            + "  [" + data_roleName(app.loggedInUser->role) + "]";
+        drawText(userInfo, WINDOW_WIDTH - 330.0f, 10, 11, COL_TEXT_MUTED, FONT_REGULAR);
+
+        if (pres_button({ WINDOW_WIDTH - 330.0f, 26, 76, 24 },
+            "Log out", { 100, 116, 139, 255 }, WHITE, 11))
+        {
+            app.loggedInUser = nullptr;
+            app.currentScreen = Screen::LOGIN;
+            app.focusedInput = 500;
+            memset(app.loginUserBuf, 0, sizeof(app.loginUserBuf));
+            memset(app.loginPassBuf, 0, sizeof(app.loginPassBuf));
+            app.loginError = "";
+        }
+    }
 
     if (pres_button({ WINDOW_WIDTH - 110.0f, 14, 94, 32 },
         "Save", COL_ACCENT, WHITE, 14))
@@ -691,8 +961,9 @@ void pres_drawStudentsScreen(AppState& app)
         logic_quickSort(app.displayedStudents, app.sortField, app.sortOrder);
     }
 
-    if (pres_button({ cx + cw - 152, cy, 152, 34 },
-        "+ New Student", COL_PRIMARY, WHITE, 14))
+    if (logic_canEdit(app.loggedInUser) &&
+        pres_button({ cx + cw - 152, cy, 152, 34 },
+            "+ New Student", COL_PRIMARY, WHITE, 14))
     {
         memset(app.formFirst, 0, sizeof(app.formFirst));
         memset(app.formLast, 0, sizeof(app.formLast));
@@ -756,8 +1027,9 @@ void pres_drawStudentsScreen(AppState& app)
             app.selectedStudentId = s->id;
             app.activeModal = Modal::STUDENT_DETAIL;
         }
-        if (pres_button({ col[6] + 60, ry + 8, 44, 26 }, "Edit",
-            { 100, 116, 139, 255 }, WHITE, 11))
+        if (logic_canEdit(app.loggedInUser) &&
+            pres_button({ col[6] + 60, ry + 8, 44, 26 }, "Edit",
+                { 100, 116, 139, 255 }, WHITE, 11))
         {
             app.editStudentId = s->id;
             strncpy(app.formFirst, s->firstName.c_str(), INPUT_BUF - 1);
@@ -768,8 +1040,9 @@ void pres_drawStudentsScreen(AppState& app)
             app.formError = "";
             app.activeModal = Modal::EDIT_STUDENT;
         }
-        if (pres_button({ col[6] + 110, ry + 8, 40, 26 }, "Del.",
-            COL_GRADE[0], WHITE, 11))
+        if (logic_canDelete(app.loggedInUser) &&
+            pres_button({ col[6] + 110, ry + 8, 40, 26 }, "Del.",
+                COL_GRADE[0], WHITE, 11))
         {
             app.deleteTargetId = s->id;
             app.activeModal = Modal::DELETE_CONFIRM;
@@ -1592,6 +1865,14 @@ void pres_update(AppState& app)
 
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && app.activeModal == Modal::NONE)
         app.focusedInput = 0;
+
+    // Show login screen if not authenticated
+    if (app.currentScreen == Screen::LOGIN)
+    {
+        pres_drawLoginScreen(app);
+        EndDrawing();
+        return;
+    }
 
     pres_drawSidebar(app);
     pres_drawTopBar(app);
