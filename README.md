@@ -24,7 +24,7 @@ Beyond coding, CyberSquad thrives on collaboration, problem‑solving, and const
  
 <h2 align="left">📄 Documents</h2><br>
   <ul>
-    <li><a href="https://codingburgas-my.sharepoint.com/:p:/g/personal/majelev24_codingburgas_bg/IQAklE2WVYLbQobO6XlzKaFxATm45kl27JArdq2BnmigBpE?e=cUCQEs">Presentation</a></li>
+    <li><a href="https://codingburgas-my.sharepoint.com/:p:/g/personal/miiliev24_codingburgas_bg/IQD7pZluE3luSpDQnTfZCctkAWlBJM89v2QR6DChWBQDVZ8?e=Nmm4Tu">Presentation</a></li>
     <li><a href="https://codingburgas-my.sharepoint.com/:w:/g/personal/majelev24_codingburgas_bg/IQCDS_cvAMoYQrnpaow_EQ16AYWvL1zDK6-_oBBXeO5Uxe4?e=lbk0e5">Documentation</a></li>
   </ul>  
  
@@ -56,7 +56,7 @@ Beyond coding, CyberSquad thrives on collaboration, problem‑solving, and const
   </tr>
 
   <tr>
-    <td align="center">Georgie Nikolov</td>
+    <td align="center">Georgi Nikolov</td>
     <td align="center">Back-End developer</td>
     <td align="center">🟨 9A</td>
     <td align="center"> <a href="https://github.com/Georgi-Ivaylov-Nikolov">Georgi-Ivaylov-Nikolov</a></td>
