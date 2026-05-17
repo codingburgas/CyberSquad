@@ -43,20 +43,20 @@ Beyond coding, CyberSquad thrives on collaboration, problem‑solving, and const
     <td align="center"> <a href="https://github.com/Martin-Zhelev">Martin-Zhelev</a></td>
   </tr>
   <tr>
-    <td align="center">Maksim Iliev</td>
-    <td align="center">Back-End developer</td>
-    <td align="center">🟩 9V</td>
-    <td align="center"> <a href="https://github.com/MaxIliev27">MaxIliev27</a></td>
-  </tr>
-  <tr>
     <td align="center">Iliyan Iliev</td>
-    <td align="center">Front-End developer</td>
+    <td align="center">Back-End developer</td>
     <td align="center">🟩 9V</td>
     <td align="center"> <a href="https://github.com/IHIliev24">IHIliev24</a></td>
   </tr>
+  <tr>
+    <td align="center">Maksim Iliev</td>
+    <td align="center">Front-End developer</td>
+    <td align="center">🟩 9V</td>
+    <td align="center"> <a href="https://github.com/MaxIliev27">MaxIliev27</a></td>
+  </tr>
 
   <tr>
-    <td align="center">Georgi Nikolov</td>
+    <td align="center">Georgie Nikolov</td>
     <td align="center">Back-End developer</td>
     <td align="center">🟨 9A</td>
     <td align="center"> <a href="https://github.com/Georgi-Ivaylov-Nikolov">Georgi-Ivaylov-Nikolov</a></td>
