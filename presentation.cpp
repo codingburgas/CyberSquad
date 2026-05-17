@@ -1525,10 +1525,10 @@ void pres_drawAboutScreen(AppState& app)
           "presentation.h / .cpp -- GUI, input handling, visualization\n"
           "main.cpp             -- entry point; initializes window and loop" },
         { "Team",
-          "Scrum Master: [Your Name]\n"
-          "Back-End Developer 1: [Your Name]\n"
-          "Back-End Developer 2: [Your Name]\n"
-          "Front-End Developer: [Your Name]" },
+          "Scrum Trainer: Martin Zhelev\n"
+          "Back-End Developer 1: Georgi Nikolov\n"
+          "Back-End Developer 2: Iliyan Iliev\n"
+          "Front-End Developer: Maksim Iliev"},
     };
 
     for (const Section& sec : sections)
