@@ -214,3 +214,21 @@ LogicResult logic_load(DataStore& store, const std::string& filepath);
 // Returns the sorted list; position in vector = rank-1
 std::vector<Student*> logic_buildRanking(DataStore& store,
     const std::string& classFilter = "");
+// ─────────────────────────────────────────────
+//  Authentication
+// ─────────────────────────────────────────────
+
+/*
+ 
+Attempt login with the given username and password.
+Returns a pointer to the matched User on success, nullptr on failure.
+The password is hashed before comparison – plain text is never stored.*/
+const User* logic_login(const UserStore& users,
+    const std::string& username,
+    const std::string& password);
+
+// Returns true if the logged-in user is allowed to modify data
+bool logic_canEdit(const User* user);
+
+// Returns true if the logged-in user is allowed to delete records
+bool logic_canDelete(const User* user);
